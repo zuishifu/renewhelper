@@ -367,6 +367,8 @@ const DataStore = {
         notifyx: { apiKey: "" },
         resend: { apiKey: "", from: "", to: "" },
         webhook: { url: "" },
+        webhook2: { url: "" },
+        webhook3: { url: "" },
       },
     };
 
@@ -659,39 +661,43 @@ const Notifier = {
       });
       return r.ok ? "OK" : "FAIL";
     },
-    webhook: async (c, title, body) => {
-      if (!c.url) return "MISSING_CONF";
-      try {
-        let headers = { "Content-Type": "application/json" };
-        if (c.headers) {
-          try {
-            const h = JSON.parse(c.headers);
-            headers = { ...headers, ...h };
-          } catch { }
-        }
-
-        let reqBody = JSON.stringify({ title, content: body });
-        if (c.body) {
-          // Unescape JSON string placeholders safely
-          // Users provide: {"text": "Title: {title}\nBody: {body}"}
-          let raw = c.body
-            .replace(/{title}/g, JSON.stringify(title).slice(1, -1))
-            .replace(/{body}/g, JSON.stringify(body).slice(1, -1));
-          reqBody = raw;
-        }
-
-        const r = await fetch(c.url, {
-          method: "POST",
-          headers: headers,
-          body: reqBody,
-        });
-        return r.ok ? "OK" : "FAIL";
-      } catch (e) {
-        return "ERR";
-      }
-    },
+    webhook: webhookAdapterImpl,
+    webhook2: webhookAdapterImpl,
+    webhook3: webhookAdapterImpl,
   },
 };
+
+async function webhookAdapterImpl(c, title, body) {
+  if (!c.url) return "MISSING_CONF";
+  try {
+    let headers = { "Content-Type": "application/json" };
+    if (c.headers) {
+      try {
+        const h = JSON.parse(c.headers);
+        headers = { ...headers, ...h };
+      } catch { }
+    }
+
+    let reqBody = JSON.stringify({ title, content: body });
+    if (c.body) {
+      // Unescape JSON string placeholders safely
+      // Users provide: {"text": "Title: {title}\nBody: {body}"}
+      let raw = c.body
+        .replace(/{title}/g, JSON.stringify(title).slice(1, -1))
+        .replace(/{body}/g, JSON.stringify(body).slice(1, -1));
+      reqBody = raw;
+    }
+
+    const r = await fetch(c.url, {
+      method: "POST",
+      headers: headers,
+      body: reqBody,
+    });
+    return r.ok ? "OK" : "FAIL";
+  } catch (e) {
+    return "ERR";
+  }
+}
 
 // ==========================================
 // 4. Logic Controllers
@@ -2019,11 +2025,25 @@ const HTML = `<!DOCTYPE html>
                                 <div class="notify-item-row"><span class="notify-label">{{ t('lblTo') }}</span><el-input v-model="settingsForm.notifyConfig.resend.to" placeholder="user@example.com"></el-input></div>
                             </el-tab-pane>
                             <el-tab-pane>
-                                <template #label><span class="flex items-center gap-2"><el-icon><Link /></el-icon> Webhook</span></template>
+                                <template #label><span class="flex items-center gap-2"><el-icon><Link /></el-icon> Webhook1#</span></template>
                                 <div class="notify-item-row"><span class="notify-label">{{ t('lblEnable') }}</span><el-switch v-model="channelMap.webhook" style="--el-switch-on-color:#2563eb;" @change="toggleChannel('webhook')"></el-switch><el-button size="small" type="primary" link @click="testChannel('webhook')" :loading="testing.webhook" style="margin-left:auto">{{ t('btnTest') }}</el-button></div>
                                 <div class="notify-item-row"><span class="notify-label">{{ t('lblServer') }}</span><el-input v-model="settingsForm.notifyConfig.webhook.url" placeholder="https://..."></el-input></div>
                                 <div class="notify-item-row"><span class="notify-label">{{ t('lblHeaders') }}</span><el-input v-model="settingsForm.notifyConfig.webhook.headers" type="textarea" :rows="2" placeholder='{"Authorization":"Bearer ..."}'></el-input></div>
                                 <div class="notify-item-row"><span class="notify-label">{{ t('lblBody') }}</span><el-input v-model="settingsForm.notifyConfig.webhook.body" type="textarea" :rows="3" placeholder='{"msg_type":"text","content":{"text":"RenewHelper: {title}\n{body}"}}'></el-input></div>
+                            </el-tab-pane>
+                            <el-tab-pane>
+                                <template #label><span class="flex items-center gap-2"><el-icon><Link /></el-icon> Webhook2#</span></template>
+                                <div class="notify-item-row"><span class="notify-label">{{ t('lblEnable') }}</span><el-switch v-model="channelMap.webhook2" style="--el-switch-on-color:#2563eb;" @change="toggleChannel('webhook2')"></el-switch><el-button size="small" type="primary" link @click="testChannel('webhook2')" :loading="testing.webhook2" style="margin-left:auto">{{ t('btnTest') }}</el-button></div>
+                                <div class="notify-item-row"><span class="notify-label">{{ t('lblServer') }}</span><el-input v-model="settingsForm.notifyConfig.webhook2.url" placeholder="https://..."></el-input></div>
+                                <div class="notify-item-row"><span class="notify-label">{{ t('lblHeaders') }}</span><el-input v-model="settingsForm.notifyConfig.webhook2.headers" type="textarea" :rows="2" placeholder='{"Authorization":"Bearer ..."}'></el-input></div>
+                                <div class="notify-item-row"><span class="notify-label">{{ t('lblBody') }}</span><el-input v-model="settingsForm.notifyConfig.webhook2.body" type="textarea" :rows="3" placeholder='{"msg_type":"text","content":{"text":"RenewHelper: {title}\n{body}"}}'></el-input></div>
+                            </el-tab-pane>
+                            <el-tab-pane>
+                                <template #label><span class="flex items-center gap-2"><el-icon><Link /></el-icon> Webhook3#</span></template>
+                                <div class="notify-item-row"><span class="notify-label">{{ t('lblEnable') }}</span><el-switch v-model="channelMap.webhook3" style="--el-switch-on-color:#2563eb;" @change="toggleChannel('webhook3')"></el-switch><el-button size="small" type="primary" link @click="testChannel('webhook3')" :loading="testing.webhook3" style="margin-left:auto">{{ t('btnTest') }}</el-button></div>
+                                <div class="notify-item-row"><span class="notify-label">{{ t('lblServer') }}</span><el-input v-model="settingsForm.notifyConfig.webhook3.url" placeholder="https://..."></el-input></div>
+                                <div class="notify-item-row"><span class="notify-label">{{ t('lblHeaders') }}</span><el-input v-model="settingsForm.notifyConfig.webhook3.headers" type="textarea" :rows="2" placeholder='{"Authorization":"Bearer ..."}'></el-input></div>
+                                <div class="notify-item-row"><span class="notify-label">{{ t('lblBody') }}</span><el-input v-model="settingsForm.notifyConfig.webhook3.body" type="textarea" :rows="3" placeholder='{"msg_type":"text","content":{"text":"RenewHelper: {title}\n{body}"}}'></el-input></div>
                             </el-tab-pane>
                         </el-tabs>
                     </div>
@@ -2180,11 +2200,11 @@ const HTML = `<!DOCTYPE html>
                     autoDisableDays:30, 
                     timezone:'UTC',
                     enabledChannels: [],
-                    notifyConfig: { telegram: {}, bark: {}, pushplus: {}, notifyx: {}, resend: {}, webhook: {} },
+                    notifyConfig: { telegram: {}, bark: {}, pushplus: {}, notifyx: {}, resend: {}, webhook: {}, webhook2: {}, webhook3: {} },
                     calendarToken: ''
                 });
-                const channelMap = reactive({ telegram:false, bark:false, pushplus:false, notifyx:false, resend:false, webhook:false });
-                const testing = reactive({ telegram:false, bark:false, pushplus:false, notifyx:false, resend:false, webhook:false });
+                const channelMap = reactive({ telegram:false, bark:false, pushplus:false, notifyx:false, resend:false, webhook:false, webhook2:false, webhook3:false });
+                const testing = reactive({ telegram:false, bark:false, pushplus:false, notifyx:false, resend:false, webhook:false, webhook2:false, webhook3:false });
                 
                 // Dark Mode State
                 const isDark = ref(document.documentElement.classList.contains('dark'));
